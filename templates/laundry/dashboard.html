@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if user.user_type == 'staff' or user.user_type == 'admin' %}
+        <a href="{% url 'create_order' %}" class="btn btn-success">
+            <i class="fas fa-plus-circle"></i> New Order
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    {% if user.user_type == 'admin' %}
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Orders</h5>
+                <h2>{{ total_orders }}</h2>
+                <p class="card-text">All-time orders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">Pending Payments</h5>
+                <h2>{{ pending_orders }}</h2>
+                <p class="card-text">Awaiting payment</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Today's Orders</h5>
+                <h2>{{ today_orders }}</h2>
+                <p class="card-text">Orders today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Revenue</h5>
+                <h2>${{ total_revenue|floatformat:2 }}</h2>
+                <p class="card-text">All-time revenue</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Staff Stats -->
+    <div class="col-md-4 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">My Orders</h5>
+                <h2>{{ staff_orders }}</h2>
+                <p class="card-text">Orders you registered</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">Pending Payments</h5>
+                <h2>{{ staff_pending }}</h2>
+                <p class="card-text">Awaiting payment</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="mt-2">
+                    <a href="{% url 'create_order' %}" class="btn btn-light btn-sm me-2">
+                        <i class="fas fa-plus"></i> New Order
+                    </a>
+                    <a href="{% url 'order_list' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-list"></i> View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if user.user_type == 'admin' %}
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Staff</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'order_detail' order.id %}">{{ order.order_number }}</a>
+                                </td>
+                                <td>{{ order.customer.name }}</td>
+                                <td>{{ order.staff.username }}</td>
+                                <td>${{ order.total_amount }}</td>
+                                <td>
+                                    <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
+                                        {{ order.get_payment_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ order.registered_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No orders yet. Create your first order!</p>
+                {% endif %}
+                {% else %}
+                <!-- Staff recent orders -->
+                {% if my_orders %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in my_orders %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'order_detail' order.id %}">{{ order.order_number }}</a>
+                                </td>
+                                <td>{{ order.customer.name }}</td>
+                                <td>${{ order.total_amount }}</td>
+                                <td>
+                                    <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
+                                        {{ order.get_payment_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ order.registered_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">You haven't created any orders yet. 
+                    <a href="{% url 'create_order' %}">Create your first order!</a>
+                </p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

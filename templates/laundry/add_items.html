@@ -1,0 +1,44 @@
+<!-- templates/laundry/add_items.html -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Available Clothing Items</h5>
+                <input type="text" id="searchItems" placeholder="Search items...">
+            </div>
+            <div class="card-body">
+                {% for item in clothing_items %}
+                <div class="item-card" data-id="{{ item.id }}" data-price="{{ item.price }}">
+                    <h6>{{ item.name }}</h6>
+                    <p>Price: ${{ item.price }}</p>
+                    <div class="quantity-control">
+                        <button class="btn-minus">-</button>
+                        <input type="number" value="0" min="0" class="item-quantity">
+                        <button class="btn-plus">+</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div id="selected-items-list">
+                    <!-- Dynamic content -->
+                </div>
+                <hr>
+                <div class="summary">
+                    <p>Subtotal: <span id="subtotal">$0.00</span></p>
+                    <p>Express Charge: <span id="express-charge">$0.00</span></p>
+                    <p>Total: <span id="total-amount">$0.00</span></p>
+                </div>
+                <button id="save-order" class="btn btn-success">Save Order</button>
+            </div>
+        </div>
+    </div>
+</div>

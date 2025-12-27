@@ -1,0 +1,20 @@
+<div class="queue-board">
+    <div class="queue-column">
+        <h4>Registered</h4>
+        {% for item in registered_queue %}
+        <div class="queue-item">
+            <span class="queue-number">#{{ item.position }}</span>
+            <span class="order-number">{{ item.order.order_number }}</span>
+            <span class="customer-name">{{ item.order.customer.name }}</span>
+            <span class="queue-time">{{ item.added_at|timesince }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="queue-column">
+        <h4>Washing</h4>
+        <!-- Similar structure -->
+    </div>
+    
+    <!-- More columns for other stages -->
+</div>

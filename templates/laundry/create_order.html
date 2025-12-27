@@ -1,0 +1,231 @@
+<!-- templates/laundry/create_order.html -->
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}New Laundry Order{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle"></i> Register New Laundry Order
+                    </h4>
+                </div>
+                
+                <form method="post" id="orderForm">
+                    {% csrf_token %}
+                    
+                    <div class="card-body">
+                        <!-- Customer Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5><i class="fas fa-user"></i> Customer Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ customer_form.name|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ customer_form.phone|as_crispy_field }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ customer_form.email|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ customer_form.address|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Items -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning">
+                                <h5><i class="fas fa-tshirt"></i> Laundry Items</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="items-formset">
+                                    {{ item_formset.management_form }}
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Item Type</th>
+                                                    <th>Quantity</th>
+                                                    <th>Description</th>
+                                                    <th>Services</th>
+                                                    <th>Price per Item</th>
+                                                    <th>Total</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="items-container">
+                                                {% for form in item_formset %}
+                                                <tr class="item-row">
+                                                    <td>{{ form.clothing_type|as_crispy_field }}</td>
+                                                    <td>{{ form.quantity|as_crispy_field }}</td>
+                                                    <td>{{ form.description|as_crispy_field }}</td>
+                                                    <td>
+                                                        <div class="form-check form-check-inline">
+                                                            {{ form.washing|as_crispy_field }}
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            {{ form.ironing|as_crispy_field }}
+                                                        </div>
+                                                        <br>
+                                                        <div class="form-check form-check-inline">
+                                                            {{ form.dry_clean|as_crispy_field }}
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            {{ form.stain_removal|as_crispy_field }}
+                                                        </div>
+                                                    </td>
+                                                    <td class="item-total">0.00</td>
+                                                    <td>
+                                                        {% if form.instance.pk %}
+                                                            {{ form.DELETE|as_crispy_field }}
+                                                        {% endif %}
+                                                        {{ form.id }}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <button type="button" id="add-item" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-plus"></i> Add Another Item
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Details -->
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                <h5><i class="fas fa-cog"></i> Order Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ order_form.expected_delivery_date|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ order_form.is_urgent|as_crispy_field }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        {{ order_form.special_instructions|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Order Summary -->
+                                <div class="row mt-4">
+                                    <div class="col-md-12">
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-calculator"></i> Order Summary</h6>
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <strong>Total Items:</strong> <span id="total-items">0</span>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <strong>Subtotal:</strong> ₹<span id="subtotal">0.00</span>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <strong>Discount:</strong> ₹<span id="discount">0.00</span>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <strong>Grand Total:</strong> ₹<span id="grand-total">0.00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-check-circle"></i> Create Order
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add new item row
+    $('#add-item').click(function() {
+        var formIdx = $('#id_items-TOTAL_FORMS').val();
+        var newRow = $('.item-row:first').clone(true);
+        
+        // Update form indices
+        newRow.find(':input').each(function() {
+            var name = $(this).attr('name').replace('-0-', '-' + formIdx + '-');
+            var id = 'id_' + name;
+            $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
+        });
+        
+        // Clear values
+        newRow.find('input[type="text"], input[type="number"]').val('');
+        newRow.find('.item-total').text('0.00');
+        
+        // Append to table
+        $('#items-container').append(newRow);
+        $('#id_items-TOTAL_FORMS').val(parseInt(formIdx) + 1);
+        
+        // Recalculate totals
+        calculateTotals();
+    });
+    
+    // Calculate item total when quantity or price changes
+    $(document).on('input', 'input[name$="-quantity"], input[name$="-price_per_item"]', function() {
+        var row = $(this).closest('.item-row');
+        var quantity = parseFloat(row.find('input[name$="-quantity"]').val()) || 0;
+        var price = parseFloat(row.find('input[name$="-price_per_item"]').val()) || 0;
+        var total = quantity * price;
+        
+        row.find('.item-total').text(total.toFixed(2));
+        calculateTotals();
+    });
+    
+    // Calculate order totals
+    function calculateTotals() {
+        var totalItems = 0;
+        var subtotal = 0;
+        
+        $('.item-row').each(function() {
+            var quantity = parseFloat($(this).find('input[name$="-quantity"]').val()) || 0;
+            var price = parseFloat($(this).find('input[name$="-price_per_item"]').val()) || 0;
+            
+            totalItems += quantity;
+            subtotal += quantity * price;
+        });
+        
+        $('#total-items').text(totalItems);
+        $('#subtotal').text(subtotal.toFixed(2));
+        $('#grand-total').text(subtotal.toFixed(2));
+    }
+    
+    // Initialize calculations
+    calculateTotals();
+});
+</script>
+{% endblock %}
