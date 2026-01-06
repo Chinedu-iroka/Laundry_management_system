@@ -21,8 +21,7 @@
                     <h6 class="border-bottom pb-2 mb-3">Contact Information</h6>
                     <p class="mb-2"><i class="fas fa-phone fa-fw text-muted me-2"></i> {{ customer.phone }}</p>
                     {% if customer.whatsapp_number %}
-                    <p class="mb-2"><i class="fab fa-whatsapp fa-fw text-success me-2"></i> {{ customer.whatsapp_number
-                        }}</p>
+                    <p class="mb-2"><i class="fab fa-whatsapp fa-fw text-success me-2"></i> {{ customer.whatsapp_number }}</p>
                     {% endif %}
                     {% if customer.email %}
                     <p class="mb-2"><i class="fas fa-envelope fa-fw text-muted me-2"></i> {{ customer.email }}</p>
@@ -33,20 +32,17 @@
                     {% endif %}
 
                     <h6 class="border-bottom pb-2 mb-3 mt-4">Registration Details</h6>
-                    <p class="mb-2"><small class="text-muted">Date Registered:</small><br>{{
-                        customer.registration_date|date:"F d, Y" }}</p>
+                    <p class="mb-2"><small class="text-muted">Date Registered:</small><br>{{ customer.registration_date|date:"F d, Y" }}</p>
                     <p class="mb-2"><small class="text-muted">Registered By:</small><br>
                         {% if customer.registered_by %}
-                        <span class="badge bg-info text-dark"><i class="fas fa-user-tag"></i> {{
-                            customer.registered_by.username }}</span>
+                        <span class="badge bg-info text-dark"><i class="fas fa-user-tag"></i> {{ customer.registered_by.username }}</span>
                         {% else %}
                         <span class="text-muted">Unknown</span>
                         {% endif %}
                     </p>
 
                     <h6 class="border-bottom pb-2 mb-3 mt-4">Stats</h6>
-                    <p class="mb-0"><small class="text-muted">Total Spent:</small><br><span class="h5 text-success">₦{{
-                            customer.total_spent }}</span></p>
+                    <p class="mb-0"><small class="text-muted">Total Spent:</small><br><span class="h5 text-success">₦{{ customer.total_spent }}</span></p>
                 </div>
             </div>
         </div>

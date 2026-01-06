@@ -193,6 +193,7 @@ def create_order(request):
                     'name': customer_form.cleaned_data.get('name'),
                     'email': customer_form.cleaned_data.get('email'),
                     'address': customer_form.cleaned_data.get('address'),
+                    'registered_by': request.user,  # Capture who registered this customer
                 }
             )
 
@@ -332,6 +333,16 @@ def register_customer(request):
 @login_required
 def customer_list(request):
     customers = Customer.objects.all().order_by('-registration_date')
+    
+    # Search functionality
+    query = request.GET.get('q')
+    if query:
+        customers = customers.filter(
+            Q(name__icontains=query) |
+            Q(customer_id__icontains=query) |
+            Q(registered_by__username__icontains=query) |
+            Q(registration_date__icontains=query)
+        )
     
     # Calculate ranking base
     max_spent = customers.aggregate(max_val=Max('total_spent'))['max_val'] or 0
