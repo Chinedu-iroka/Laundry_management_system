@@ -1,14 +1,83 @@
 {% extends 'base.html' %}
 
-{% block title %}Order Details{% endblock %}
+{% block title %}Order Details - {{ order.order_number }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Order Details</h2>
-    <div class="card">
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between">
+            <h3 class="mb-0">Order: {{ order.order_number }}</h3>
+            <span
+                class="badge bg-light text-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %} fs-6">
+                {{ order.get_status_display }}
+            </span>
+        </div>
         <div class="card-body">
-            <p class="text-muted">This page is under construction.</p>
-            <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Customer Details</h5>
+                    <hr>
+                    <p><strong>Name:</strong> {{ order.customer.name }}<br>
+                        <strong>ID:</strong> {{ order.customer.customer_id }}<br>
+                        <strong>Phone:</strong> {{ order.customer.phone }}
+                    </p>
+                </div>
+
+                <div class="col-md-6 text-md-end">
+                    <h5>Order Information</h5>
+                    <hr>
+                    <p><strong>Date:</strong> {{ order.order_date|date:"M d, Y" }}<br>
+                        <strong>Processed By:</strong> {{ order.staff.get_full_name|default:order.staff.username }}<br>
+                        <strong>Urgent:</strong> {% if order.is_urgent %}<span class="text-danger">YES</span>{% else
+                        %}No{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Items</h4>
+                <a href="{% url 'add_order_items' order.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Add Items
+                </a>
+            </div>
+
+            <table class="table table-striped border">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.clothing_type.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>₦{{ item.price_per_item }}</td>
+                        <td>₦{{ item.total_price }}</td>
+                        <td>
+                            <a href="{% url 'delete_order_item' item.id %}" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Are you sure you want to remove this item?')">
+                                Remove
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-secondary fw-bold">
+                        <td colspan="3" class="text-end">Grand Total:</td>
+                        <td colspan="2">₦{{ order.total_price }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+            <a href="{% url 'order_list' %}" class="btn btn-secondary">Back to Order List</a>
+            <button onclick="window.print()" class="btn btn-info text-white">Print Receipt</button>
         </div>
     </div>
 </div>

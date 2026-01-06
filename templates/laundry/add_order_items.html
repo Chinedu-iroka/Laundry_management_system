@@ -3,12 +3,63 @@
 {% block title %}Add Order Items{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Add Items to Order</h2>
-    <div class="card">
-        <div class="card-body">
-            <p class="text-muted">This page is under construction.</p>
-            <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Add Items to Order #{{ order.order_number }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label for="item_id" class="form-label">Select Item</label>
+                        <select name="item_id" id="item_id" class="form-select" required>
+                            <option value="">-- Choose Clothing Type --</option>
+                            {% for clothing in clothing_items %}
+                            <option value="{{ clothing.id }}">
+                                {{ clothing.name }} - ₦{{ clothing.price }}
+                                {% if clothing.urgent_price %}(Urgent: ₦{{ clothing.urgent_price }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1"
+                            required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Services</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="washing" id="washing" checked>
+                            <label class="form-check-label" for="washing">
+                                Wash & Dry
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="ironing" id="ironing">
+                            <label class="form-check-label" for="ironing">
+                                Ironing
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="rewashing" id="rewashing">
+                            <label class="form-check-label" for="rewashing">
+                                Rewashing (Free)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Add Item</button>
+                        <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

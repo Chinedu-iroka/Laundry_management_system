@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db.models import Count, Sum
-from .models import Customer, LaundryOrder
-from .models import Customer, LaundryOrder, ClothingType, OrderItem
+from django.db.models import Count, Sum, Max, Q
+from .models import Customer, LaundryOrder, OrderItem, ClothingType
 from django.utils import timezone
-from .forms import CustomerForm, LaundryOrderForm, OrderItemFormSet
+from .forms import CustomerForm, LaundryOrderForm, OrderItemFormSet, CustomerRegistrationForm
 import random
 import string
 
@@ -31,7 +30,7 @@ def dashboard(request):
     """Main dashboard view for all users"""
     context = {}
     
-    if request.user.user_type == 'admin':
+    if request.user.user_type == 'admin' or request.user.is_superuser:
         # Admin dashboard
         total_orders = LaundryOrder.objects.count()
         pending_orders = LaundryOrder.objects.filter(payment_status='pending').count()
@@ -39,7 +38,7 @@ def dashboard(request):
             registered_at__date=timezone.now().date()
         ).count()
         total_revenue = LaundryOrder.objects.aggregate(
-            total=Sum('total_amount')
+            total=Sum('total_price')
         )['total'] or 0
         
         context.update({
@@ -110,8 +109,10 @@ def add_order_items(request, order_id):
             OrderItem.objects.create(
                 order=order,
                 clothing_type=clothing,
-                quantity=quantity,
-                unit_price=clothing.price
+                quantity=int(quantity),
+                washing=request.POST.get('washing') == 'on',
+                ironing=request.POST.get('ironing') == 'on',
+                rewashing=request.POST.get('rewashing') == 'on'
             )
             messages.success(request, f'Added {quantity} {clothing.name}(s) to order')
         
@@ -124,15 +125,21 @@ def add_order_items(request, order_id):
 
 @login_required
 def order_list(request):
-    """View all orders"""
-    if request.user.user_type == 'admin':
-        orders = LaundryOrder.objects.all()
+    # Use select_related to join the User (staff) table with the Order table
+    if request.user.user_type == 'admin' or request.user.is_superuser:
+        orders = LaundryOrder.objects.select_related('customer', 'staff').all().order_by('-order_date')
     else:
-        orders = LaundryOrder.objects.filter(staff=request.user)
+        orders = LaundryOrder.objects.select_related('customer', 'staff').filter(staff=request.user).order_by('-order_date')
     
-    return render(request, 'laundry/order_list.html', {
-        'orders': orders
-    })
+    query = request.GET.get('q')
+    if query:
+        orders = orders.filter(
+            Q(order_number__icontains=query) | 
+            Q(customer__name__icontains=query) |
+            Q(customer__phone__icontains=query)
+        )
+
+    return render(request, 'laundry/order_list.html', {'orders': orders})
 
 @login_required
 def order_detail(request, order_id):
@@ -140,7 +147,7 @@ def order_detail(request, order_id):
     order = get_object_or_404(LaundryOrder, id=order_id)
     
     # Check permission
-    if request.user.user_type != 'admin' and order.staff != request.user:
+    if not (request.user.is_superuser or request.user.user_type == 'admin' or order.staff == request.user):
         messages.error(request, 'You do not have permission to view this order')
         return redirect('order_list')
     
@@ -165,56 +172,197 @@ def generate_order_number():
     random_part = ''.join(random.choices(string.digits, k=5))
     return f"LAU-{date_part}-{random_part}"
 
+
 @login_required
 def create_order(request):
     if request.method == 'POST':
         customer_form = CustomerForm(request.POST, prefix='customer')
         order_form = LaundryOrderForm(request.POST, prefix='order')
         item_formset = OrderItemFormSet(request.POST, prefix='items')
-        
-        if customer_form.is_valid() and order_form.is_valid() and item_formset.is_valid():
-            # Save customer
-            customer = customer_form.save()
-            
-            # Create order
+
+        if (
+            customer_form.is_valid() and
+            order_form.is_valid() and
+            item_formset.is_valid()
+        ):
+            # GET OR CREATE CUSTOMER (by phone)
+            phone = customer_form.cleaned_data.get('phone')
+            customer, created = Customer.objects.get_or_create(
+                phone=phone,
+                defaults={
+                    'name': customer_form.cleaned_data.get('name'),
+                    'email': customer_form.cleaned_data.get('email'),
+                    'address': customer_form.cleaned_data.get('address'),
+                }
+            )
+
+            # CREATE ORDER
             order = order_form.save(commit=False)
             order.customer = customer
             order.staff = request.user
-            order.order_number = generate_order_number()
-            
-            # Calculate delivery date
-            if order.expected_delivery_date:
-                order.expected_delivery_date = order.expected_delivery_date
-            
+
+            # Default delivery date
+            if not order.expected_delivery_date:
+                order.expected_delivery_date = timezone.now().date() + timezone.timedelta(days=3)
+
             order.save()
-            
-            # Save order items
-            items = item_formset.save(commit=False)
-            total_items = 0
-            total_price = 0
-            
-            for item in items:
-                item.order = order
-                item.total_price = item.quantity * item.price_per_item
-                item.save()
-                total_items += item.quantity
-                total_price += item.total_price
-            
-            # Update order totals
-            order.total_items = total_items
-            order.total_price = total_price
-            order.balance = total_price - order.amount_paid
+
+            # SAVE ORDER ITEMS
+            item_formset.instance = order
+            item_formset.save()
+
+            # 🔥 SINGLE SOURCE OF TRUTH FOR PRICING
+            order.calculate_totals()
             order.save()
-            
+
             return redirect('order_detail', order_id=order.id)
+
     else:
         customer_form = CustomerForm(prefix='customer')
         order_form = LaundryOrderForm(prefix='order')
         order_form.fields['expected_delivery_date'].initial = timezone.now().date()
         item_formset = OrderItemFormSet(prefix='items')
-    
+
     return render(request, 'laundry/create_order.html', {
         'customer_form': customer_form,
         'order_form': order_form,
         'item_formset': item_formset,
+    })
+
+@login_required
+@user_passes_test(is_staff)
+def delete_order_item(request, item_id):
+    """Delete an item from an order"""
+    item = get_object_or_404(OrderItem, id=item_id)
+    order_id = item.order.id
+    
+    # Delete the item (this will trigger OrderItem.delete() which updates the order total)
+    item.delete()
+    
+    messages.success(request, 'Item removed successfully')
+    return redirect('order_detail', order_id=order_id)
+
+# @login_required
+# def create_order(request):
+#     if request.method == 'POST':
+#         customer_form = CustomerForm(request.POST, prefix='customer')
+#         order_form = LaundryOrderForm(request.POST, prefix='order')
+#         item_formset = OrderItemFormSet(request.POST, prefix='items')
+        
+#         if customer_form.is_valid() and order_form.is_valid() and item_formset.is_valid():
+#             # GET OR CREATE logic: Finds existing customer by phone
+#             phone = customer_form.cleaned_data.get('phone')
+#             customer, created = Customer.objects.get_or_create(
+#                 phone=phone,
+#                 defaults={
+#                     'name': customer_form.cleaned_data.get('name'),
+#                     'email': customer_form.cleaned_data.get('email'),
+#                     'address': customer_form.cleaned_data.get('address'),
+#                 }
+#             )
+            
+#             # Create order
+#             order = order_form.save(commit=False)
+#             order.customer = customer
+#             order.staff = request.user
+#             order.save()
+            
+#             # Calculate delivery date
+#             if not order.expected_delivery_date:
+#                 order.expected_delivery_date = timezone.now() + timezone.timedelta(days=3)
+            
+#             order.save()
+            
+#             # Save order items
+#             item_formset.instance = order
+#             item_formset.save()
+#             total_items = 0
+#             total_price = 0
+#             order.calculate_totals()
+#             order.save()
+#             for item in items:
+#                 item.order = order
+#                 if item.clothing_type:
+#                     item.price_per_item = item.clothing_type.price
+                
+#                 # Safety check: Use 0 if values are missing to prevent crash
+#                 current_price = item.price_per_item or 0
+#                 current_qty = item.quantity or 0
+                
+#                 item.total_price = current_qty * current_price
+#                 item.save()
+                
+#                 total_items += current_qty
+#                 total_price += item.total_price
+            
+#             # Update order totals
+#             order.total_items = total_items
+#             order.total_price = total_price
+#             order.balance = total_price - order.amount_paid
+#             order.save()
+            
+#             return redirect('order_detail', order_id=order.id)
+#     else:
+#         customer_form = CustomerForm(prefix='customer')
+#         order_form = LaundryOrderForm(prefix='order')
+#         order_form.fields['expected_delivery_date'].initial = timezone.now().date()
+#         item_formset = OrderItemFormSet(prefix='items')
+    
+#     return render(request, 'laundry/create_order.html', {
+#         'customer_form': customer_form,
+#         'order_form': order_form,
+#         'item_formset': item_formset,
+#     })
+
+@login_required
+def register_customer(request):
+    if request.method == 'POST':
+        form = CustomerRegistrationForm(request.POST)
+        if form.is_valid():
+            customer = form.save(commit=False)
+            customer.registered_by = request.user
+            customer.save()
+            messages.success(request, f'Customer {customer.name} registered successfully!')
+            return redirect('customer_list')
+    else:
+        form = CustomerRegistrationForm()
+    
+    return render(request, 'laundry/register_customer.html', {'form': form})
+
+@login_required
+def customer_list(request):
+    customers = Customer.objects.all().order_by('-registration_date')
+    
+    # Calculate ranking base
+    max_spent = customers.aggregate(max_val=Max('total_spent'))['max_val'] or 0
+    
+    for customer in customers:
+        # Calculate rank: 1-5 stars
+        if max_spent > 0:
+            # Formula: (customer_spent / max_spent) * 5
+            # We use float() for division and round() for nearest integer
+            rank = round((float(customer.total_spent) / float(max_spent)) * 5)
+            # Ensure at least 1 star if they have spent anything, else 0? 
+            # Requirement says "customer with highest order ranks 5 stars"
+            # Let's say: 0 spent = 0 stars (or 1). 
+            # If max_spent is high, low spenders get 0 or 1.
+            # Let's clamp to 1-5 for non-zero spenders? Or just pure ratio.
+            customer.rank = int(rank) if rank > 0 else (1 if customer.total_spent > 0 else 0)
+        else:
+            customer.rank = 0
+            
+        # Range for template loop (e.g. range(customer.rank))
+        customer.star_range = range(customer.rank)
+        customer.empty_star_range = range(5 - customer.rank)
+        
+    return render(request, 'laundry/customer_list.html', {'customers': customers})
+
+@login_required
+def customer_detail(request, customer_id):
+    customer = get_object_or_404(Customer, id=customer_id)
+    orders = customer.orders.select_related('staff').order_by('-order_date')
+    
+    return render(request, 'laundry/customer_detail.html', {
+        'customer': customer,
+        'orders': orders
     })

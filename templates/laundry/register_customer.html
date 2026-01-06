@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-user-plus"></i> Register Customer</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        {{ form.phone }}
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="sameAsPhone">
+                            <label class="form-check-label" for="sameAsPhone">
+                                WhatsApp number is same as phone number
+                            </label>
+                        </div>
+                        <label class="form-label">WhatsApp Number</label>
+                        {{ form.whatsapp_number }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Alternate Phone Number (Optional)</label>
+                        {{ form.alternate_phone }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        {{ form.email }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        {{ form.address }}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Register Customer
+                        </button>
+                        <a href="{% url 'customer_list' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('sameAsPhone').addEventListener('change', function () {
+        if (this.checked) {
+            document.getElementById('id_whatsapp_number').value = document.getElementById('id_phone').value;
+        }
+    });
+
+    document.getElementById('id_phone').addEventListener('input', function () {
+        if (document.getElementById('sameAsPhone').checked) {
+            document.getElementById('id_whatsapp_number').value = this.value;
+        }
+    });
+</script>
+{% endblock %}

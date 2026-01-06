@@ -16,7 +16,7 @@
 
 <!-- Stats Cards -->
 <div class="row mb-4">
-    {% if user.user_type == 'admin' %}
+    {% if user.user_type == 'admin' or user.is_superuser %}
     <div class="col-md-3 mb-3">
         <div class="card bg-primary text-white">
             <div class="card-body">
@@ -48,7 +48,7 @@
         <div class="card bg-info text-white">
             <div class="card-body">
                 <h5 class="card-title">Total Revenue</h5>
-                <h2>${{ total_revenue|floatformat:2 }}</h2>
+                <h2>₦{{ total_revenue|floatformat:2 }}</h2>
                 <p class="card-text">All-time revenue</p>
             </div>
         </div>
@@ -99,7 +99,7 @@
                 <h5><i class="fas fa-history"></i> Recent Activity</h5>
             </div>
             <div class="card-body">
-                {% if user.user_type == 'admin' %}
+                {% if user.user_type == 'admin' or user.is_superuser %}
                 {% if recent_orders %}
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -110,6 +110,7 @@
                                 <th>Staff</th>
                                 <th>Amount</th>
                                 <th>Status</th>
+                                <th>Payment</th>
                                 <th>Date</th>
                             </tr>
                         </thead>
@@ -121,9 +122,16 @@
                                 </td>
                                 <td>{{ order.customer.name }}</td>
                                 <td>{{ order.staff.username }}</td>
-                                <td>${{ order.total_amount }}</td>
+                                <td>₦{{ order.total_price }}</td>
                                 <td>
-                                    <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
+                                    <span
+                                        class="badge bg-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
                                         {{ order.get_payment_status_display }}
                                     </span>
                                 </td>
@@ -147,6 +155,7 @@
                                 <th>Customer</th>
                                 <th>Amount</th>
                                 <th>Status</th>
+                                <th>Payment</th>
                                 <th>Date</th>
                                 <th>Actions</th>
                             </tr>
@@ -158,9 +167,16 @@
                                     <a href="{% url 'order_detail' order.id %}">{{ order.order_number }}</a>
                                 </td>
                                 <td>{{ order.customer.name }}</td>
-                                <td>${{ order.total_amount }}</td>
+                                <td>₦{{ order.total_price }}</td>
                                 <td>
-                                    <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
+                                    <span
+                                        class="badge bg-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
                                         {{ order.get_payment_status_display }}
                                     </span>
                                 </td>
@@ -176,7 +192,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">You haven't created any orders yet. 
+                <p class="text-muted">You haven't created any orders yet.
                     <a href="{% url 'create_order' %}">Create your first order!</a>
                 </p>
                 {% endif %}

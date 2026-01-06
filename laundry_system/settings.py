@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     # ⭐ Third-party apps
     'crispy_forms',                     # For better forms
     'crispy_bootstrap5',                # Bootstrap 5 for crispy forms
-    'import_export',        
+    'import_export',
+    'widget_tweaks',
 ]
 
 # Crispy forms configuration
