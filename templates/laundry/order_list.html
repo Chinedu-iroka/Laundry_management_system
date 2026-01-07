@@ -90,7 +90,9 @@
                         {% if user.user_type == 'admin' or user.is_superuser %}
                         <th>Staff</th>
                         {% endif %}
-                        <th>Amount</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
                         <th>Status</th>
                         <th>Payment</th>
                         <th>Date</th>
@@ -109,6 +111,8 @@
                         <td>{{ order.staff.username }}</td>
                         {% endif %}
                         <td>₦{{ order.total_price }}</td>
+                        <td class="text-success">₦{{ order.amount_paid }}</td>
+                        <td class="text-danger">₦{{ order.balance }}</td>
                         <td>
                             <span
                                 class="badge bg-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
@@ -128,7 +132,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">No orders found.</td>
+                        <td colspan="10" class="text-center py-4 text-muted">No orders found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

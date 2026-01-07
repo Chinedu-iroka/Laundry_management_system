@@ -208,14 +208,16 @@ def export_orders_csv(request):
     response['Content-Disposition'] = f'attachment; filename="order_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
     
     writer = csv.writer(response)
-    writer.writerow(['Order #', 'Customer', 'Staff', 'Amount', 'Status', 'Payment', 'Date'])
+    writer.writerow(['Order #', 'Customer', 'Staff', 'Total Price', 'Paid', 'Balance', 'Status', 'Payment', 'Date'])
     
     for order in orders:
         writer.writerow([
             order.order_number,
             order.customer.name,
-            order.staff.username,
+            order.staff.username if order.staff else 'N/A',
             order.total_price,
+            order.amount_paid,
+            order.balance,
             order.get_status_display(),
             order.get_payment_status_display(),
             order.order_date.strftime("%Y-%m-%d %H:%M")
