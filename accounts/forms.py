@@ -14,3 +14,8 @@ class UserRegistrationForm(UserCreationForm):
         # If admin is creating staff, only show staff option
         super().__init__(*args, **kwargs)
         self.fields['user_type'].choices = User.USER_TYPE_CHOICES  # Only staff can be created
+
+class ProfilePictureUploadForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['profile_picture']

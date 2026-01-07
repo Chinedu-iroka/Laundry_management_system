@@ -22,3 +22,6 @@ class LaundryOrderAdmin(admin.ModelAdmin):
     list_display = ('order_number', 'customer', 'status', 'total_price', 'registered_at')
     list_filter = ('status', 'payment_status')
     inlines = [OrderItemInline]
+
+    class Media:
+        js = ('js/admin_payment_sync.js',)

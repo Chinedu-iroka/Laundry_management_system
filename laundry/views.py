@@ -46,15 +46,23 @@ def dashboard(request):
         today_orders = LaundryOrder.objects.filter(
             registered_at__date=timezone.now().date()
         ).count()
-        total_revenue = LaundryOrder.objects.aggregate(
-            total=Sum('total_price')
+        
+        # Overall system revenue (from all users)
+        overall_revenue = LaundryOrder.objects.aggregate(
+            total=Sum('amount_paid')
         )['total'] or 0
+        
+        # Admin's personal revenue (orders handled by current admin)
+        admin_revenue = LaundryOrder.objects.filter(
+            staff=request.user
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
         
         context.update({
             'total_orders': total_orders,
             'pending_orders': pending_orders,
             'today_orders': today_orders,
-            'total_revenue': total_revenue,
+            'overall_revenue': overall_revenue,
+            'admin_revenue': admin_revenue,
             'recent_orders': LaundryOrder.objects.all()[:10],
         })
     else:
@@ -66,9 +74,8 @@ def dashboard(request):
         ).count()
         
         staff_revenue = LaundryOrder.objects.filter(
-            staff=request.user,
-            payment_status='paid'
-        ).aggregate(total=Sum('total_price'))['total'] or 0
+            staff=request.user
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
         
         context.update({
             'staff_orders': staff_orders,

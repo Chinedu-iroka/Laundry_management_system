@@ -77,10 +77,21 @@
                     {% endfor %}
                 </tbody>
                 <tfoot>
+                    {% if order.is_urgent %}
+                    <tr class="table-light font-monospace">
+                        <td colspan="3" class="text-end">Subtotal:</td>
+                        <td colspan="2">₦{{ order.subtotal }}</td>
+                    </tr>
+                    <tr class="table-danger font-monospace">
+                        <td colspan="3" class="text-end text-danger fw-bold">Urgent Fee:</td>
+                        <td colspan="2" class="text-danger fw-bold">₦{{ order.urgent_fee }}</td>
+                    </tr>
+                    {% endif %}
+
                     {% if order.payment_status == 'partial' %}
                     <tr class="table-info font-monospace">
-                        <td colspan="3" class="text-end">Total Amount:</td>
-                        <td colspan="2">₦{{ order.total_price }}</td>
+                        <td colspan="3" class="text-end font-weight-bold">Total Amount:</td>
+                        <td colspan="2" class="fw-bold">₦{{ order.total_price }}</td>
                     </tr>
                     <tr class="table-warning font-monospace">
                         <td colspan="3" class="text-end text-success">Amount Paid:</td>

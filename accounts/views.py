@@ -1,11 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.views.generic import TemplateView
-from .forms import UserRegistrationForm
+from .forms import UserRegistrationForm, ProfilePictureUploadForm
 from .models import User
-# Create your views here.
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -37,11 +36,12 @@ def register_staff(request):
     
     return render(request, 'accounts/register_staff.html', {'form': form})
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.user_type == 'admin')
 def user_list(request):
     """View to list all users (admin only)"""
-    users = User.objects.all()
+    users = User.objects.all().order_by('-date_joined')
 
-    # Calculate counts here in Python
     staff_count = users.filter(user_type='staff').count()
     admin_count = users.filter(user_type='admin').count()
     return render(request, 'accounts/user_list.html', {
@@ -49,3 +49,30 @@ def user_list(request):
         'staff_count': staff_count,
         'admin_count': admin_count,
     })
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.user_type == 'admin')
+def user_profile(request, user_id):
+    """View detailed user profile (admin only)"""
+    user = get_object_or_404(User, id=user_id)
+    return render(request, 'accounts/user_profile.html', {'target_user': user})
+
+@login_required
+def upload_profile_picture(request, user_id):
+    """View to handle profile picture upload"""
+    target_user = get_object_or_404(User, id=user_id)
+    
+    # Check if the user is authorized to update this profile
+    if not (request.user.is_superuser or request.user.user_type == 'admin' or request.user.id == target_user.id):
+        messages.error(request, "You are not authorized to update this profile picture.")
+        return redirect('user_profile', user_id=user_id)
+
+    if request.method == 'POST':
+        form = ProfilePictureUploadForm(request.POST, request.FILES, instance=target_user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile picture updated successfully!")
+        else:
+            messages.error(request, "Error updating profile picture. Please try again.")
+            
+    return redirect('user_profile', user_id=user_id)

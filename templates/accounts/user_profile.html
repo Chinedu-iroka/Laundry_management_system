@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile - {{ target_user.username }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i> User Profile Detail
+                    </h4>
+                    <span class="badge bg-light text-primary fs-6">
+                        {{ target_user.get_user_type_display }}
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Left Column: Profile Photo -->
+                        <div class="col-md-4 text-center mb-4 border-end">
+                            <div class="profile-photo-container mb-3">
+                                {% if target_user.profile_picture %}
+                                <img src="{{ target_user.profile_picture.url }}" class="rounded-circle shadow-sm"
+                                    style="width: 180px; height: 180px; object-fit: cover; border: 5px solid #fff;">
+                                {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto shadow-sm"
+                                    style="width: 180px; height: 180px; border: 3px dashed #dee2e6;">
+                                    <i class="fas fa-user fa-5x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if user.is_superuser or user.user_type == 'admin' or user.id == target_user.id %}
+                            <form action="{% url 'upload_profile_picture' target_user.id %}" method="post"
+                                enctype="multipart/form-data" id="photoForm">
+                                {% csrf_token %}
+                                <input type="file" name="profile_picture" id="profile_picture" class="d-none"
+                                    onchange="document.getElementById('photoForm').submit()">
+                                <label for="profile_picture" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                    <i class="fas fa-camera me-2"></i> Upload New Photo
+                                </label>
+                            </form>
+                            {% endif %}
+
+                            <div class="mt-4 pt-4 border-top">
+                                <h5 class="fw-bold mb-1">{{ target_user.get_full_name|default:target_user.username }}
+                                </h5>
+                                <p class="text-muted small mb-0">{{ target_user.get_user_type_display }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: User Details -->
+                        <div class="col-md-8 ps-md-4">
+                            <h5 class="mb-4 border-bottom pb-2 text-primary"><i
+                                    class="fas fa-info-circle me-2"></i>Personal Information</h5>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Username</div>
+                                <div class="col-sm-8 fw-bold text-dark">{{ target_user.username }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Full Name</div>
+                                <div class="col-sm-8 text-dark">{{ target_user.first_name }} {{ target_user.last_name }}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Email Address</div>
+                                <div class="col-sm-8 text-dark">{{ target_user.email|default:"Not specified" }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Phone Number</div>
+                                <div class="col-sm-8 text-dark">{{ target_user.phone }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Home Address</div>
+                                <div class="col-sm-8 text-dark">{{ target_user.address|default:"Not specified" }}</div>
+                            </div>
+
+                            <h5 class="mt-5 mb-4 border-bottom pb-2 text-primary"><i
+                                    class="fas fa-shield-alt me-2"></i>Account Status</h5>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Current Status</div>
+                                <div class="col-sm-8">
+                                    {% if target_user.is_active %}
+                                    <span class="badge bg-success shadow-sm me-1">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary shadow-sm me-1">Inactive</span>
+                                    {% endif %}
+
+                                    {% if target_user.is_superuser %}
+                                    <span class="badge bg-danger shadow-sm me-1">Superuser</span>
+                                    {% endif %}
+
+                                    {% if target_user.is_active_staff %}
+                                    <span class="badge bg-primary shadow-sm">Active Staff Member</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Date Joined</div>
+                                <div class="col-sm-8 text-dark">
+                                    {{ target_user.date_joined|date:"F d, Y" }}
+                                    <span class="text-muted small ml-1">({{ target_user.date_joined|timesince }}
+                                        ago)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-3 border-top d-flex justify-content-between">
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary px-4">
+                            <i class="fas fa-arrow-left me-2"></i> Back to User List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        border-bottom: none;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+
+    .text-muted {
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}

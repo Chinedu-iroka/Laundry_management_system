@@ -47,9 +47,18 @@
     <div class="col-md-3 mb-3">
         <div class="card bg-info text-white">
             <div class="card-body">
-                <h5 class="card-title">Total Revenue</h5>
-                <h2>₦{{ total_revenue|floatformat:2 }}</h2>
-                <p class="card-text">All-time revenue</p>
+                <h5 class="card-title">My Revenue</h5>
+                <h2>₦{{ admin_revenue|floatformat:2 }}</h2>
+                <p class="card-text">Your processed payments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-dark text-white">
+            <div class="card-body">
+                <h5 class="card-title">Overall Revenue</h5>
+                <h2>₦{{ overall_revenue|floatformat:2 }}</h2>
+                <p class="card-text">Sum of all staff payments</p>
             </div>
         </div>
     </div>
@@ -78,7 +87,7 @@
             <div class="card-body">
                 <h5 class="card-title">Total Revenue</h5>
                 <h2>₦{{ staff_revenue|floatformat:2 }}</h2>
-                <p class="card-text">From paid orders you processed</p>
+                <p class="card-text">Total payments processed</p>
             </div>
         </div>
     </div>
