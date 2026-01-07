@@ -68,6 +68,16 @@ class LaundryOrderForm(forms.ModelForm):
             'special_instructions': forms.Textarea(attrs={'rows': 3}),
         }
 
+class OrderCreateForm(LaundryOrderForm):
+    customer = forms.ModelChoiceField(
+        queryset=Customer.objects.all().order_by('name'),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Select Customer"
+    )
+
+    class Meta(LaundryOrderForm.Meta):
+        fields = ['customer'] + LaundryOrderForm.Meta.fields
+
 class CustomerRegistrationForm(forms.ModelForm):
     first_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}))
     last_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}))

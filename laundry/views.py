@@ -2,9 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Count, Sum, Max, Q
+from django.contrib.auth import get_user_model
 from .models import Customer, LaundryOrder, OrderItem, ClothingType
 from django.utils import timezone
-from .forms import CustomerForm, LaundryOrderForm, OrderItemFormSet, CustomerRegistrationForm
+from .forms import (
+    CustomerForm, 
+    LaundryOrderForm, 
+    OrderCreateForm, 
+    OrderItemFormSet, 
+    CustomerRegistrationForm
+)
 import random
 import string
 
@@ -131,6 +138,7 @@ def order_list(request):
     else:
         orders = LaundryOrder.objects.select_related('customer', 'staff').filter(staff=request.user).order_by('-order_date')
     
+    # Basic Text Search
     query = request.GET.get('q')
     if query:
         orders = orders.filter(
@@ -139,7 +147,36 @@ def order_list(request):
             Q(customer__phone__icontains=query)
         )
 
-    return render(request, 'laundry/order_list.html', {'orders': orders})
+    # Status Filter
+    status_filter = request.GET.get('status')
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
+    # Payment Filter
+    payment_filter = request.GET.get('payment')
+    if payment_filter:
+        orders = orders.filter(payment_status=payment_filter)
+
+    # Date Filter
+    date_filter = request.GET.get('date')
+    if date_filter:
+        orders = orders.filter(order_date__date=date_filter)
+
+    # Staff Filter (Admin Only)
+    staff_filter = request.GET.get('staff')
+    if staff_filter and (request.user.is_superuser or request.user.user_type == 'admin'):
+        orders = orders.filter(staff__id=staff_filter)
+
+    # Context data for filter dropdowns
+    User = get_user_model()
+    staff_list = User.objects.filter(is_active=True) if (request.user.is_superuser or request.user.user_type == 'admin') else None
+
+    return render(request, 'laundry/order_list.html', {
+        'orders': orders,
+        'order_status_choices': LaundryOrder.ORDER_STATUS,
+        'payment_status_choices': LaundryOrder.PAYMENT_STATUS,
+        'staff_list': staff_list
+    })
 
 @login_required
 def order_detail(request, order_id):
@@ -175,27 +212,17 @@ def generate_order_number():
 
 @login_required
 def create_order(request):
+    # Pre-select customer if passed in URL
+    initial_customer = request.GET.get('customer')
+    
     if request.method == 'POST':
-        customer_form = CustomerForm(request.POST, prefix='customer')
-        order_form = LaundryOrderForm(request.POST, prefix='order')
+        # Removed CustomerForm, using OrderCreateForm instead
+        order_form = OrderCreateForm(request.POST, prefix='order')
         item_formset = OrderItemFormSet(request.POST, prefix='items')
 
-        if (
-            customer_form.is_valid() and
-            order_form.is_valid() and
-            item_formset.is_valid()
-        ):
-            # GET OR CREATE CUSTOMER (by phone)
-            phone = customer_form.cleaned_data.get('phone')
-            customer, created = Customer.objects.get_or_create(
-                phone=phone,
-                defaults={
-                    'name': customer_form.cleaned_data.get('name'),
-                    'email': customer_form.cleaned_data.get('email'),
-                    'address': customer_form.cleaned_data.get('address'),
-                    'registered_by': request.user,  # Capture who registered this customer
-                }
-            )
+        if order_form.is_valid() and item_formset.is_valid():
+            # Get selected customer
+            customer = order_form.cleaned_data['customer']
 
             # CREATE ORDER
             order = order_form.save(commit=False)
@@ -219,13 +246,19 @@ def create_order(request):
             return redirect('order_detail', order_id=order.id)
 
     else:
-        customer_form = CustomerForm(prefix='customer')
-        order_form = LaundryOrderForm(prefix='order')
+        # Initialize form with customer if provided
+        initial_data = {}
+        if initial_customer:
+            try:
+                initial_data['customer'] = Customer.objects.get(id=initial_customer)
+            except Customer.DoesNotExist:
+                pass
+                
+        order_form = OrderCreateForm(prefix='order', initial=initial_data)
         order_form.fields['expected_delivery_date'].initial = timezone.now().date()
         item_formset = OrderItemFormSet(prefix='items')
 
     return render(request, 'laundry/create_order.html', {
-        'customer_form': customer_form,
         'order_form': order_form,
         'item_formset': item_formset,
     })

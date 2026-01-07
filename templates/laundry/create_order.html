@@ -19,19 +19,16 @@
 
                     <div class="card-body">
 
-                        <!-- Customer Information -->
+                        <!-- Customer Selection -->
                         <div class="card mb-4">
                             <div class="card-header bg-info text-white">
-                                <h5><i class="fas fa-user"></i> Customer Information</h5>
+                                <h5><i class="fas fa-user"></i> Customer Selection</h5>
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">{{ customer_form.name|as_crispy_field }}</div>
-                                    <div class="col-md-6">{{ customer_form.phone|as_crispy_field }}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">{{ customer_form.email|as_crispy_field }}</div>
-                                    <div class="col-md-6">{{ customer_form.address|as_crispy_field }}</div>
+                                {{ order_form.customer|as_crispy_field }}
+                                <div class="form-text mt-2">
+                                    <i class="fas fa-info-circle"></i> Can't find the customer?
+                                    <a href="{% url 'register_customer' %}">Register a new customer</a>.
                                 </div>
                             </div>
                         </div>
@@ -64,10 +61,18 @@
                                                 <td>{{ form.quantity }}</td>
                                                 <td>{{ form.description }}</td>
                                                 <td>
-                                                    {{ form.washing }}
-                                                    {{ form.ironing }}
-                                                    {{ form.dry_clean }}
-                                                    {{ form.stain_removal }}
+                                                    <div class="form-check">
+                                                        {{ form.washing }}
+                                                        <label class="form-check-label">Wash & Dry</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        {{ form.ironing }}
+                                                        <label class="form-check-label">Ironing</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        {{ form.rewashing }}
+                                                        <label class="form-check-label">Rewashing (Free)</label>
+                                                    </div>
                                                 </td>
                                                 <td class="text-center">
                                                     {% if not forloop.first %}
@@ -91,10 +96,18 @@
                                             <td>{{ item_formset.empty_form.quantity }}</td>
                                             <td>{{ item_formset.empty_form.description }}</td>
                                             <td>
-                                                {{ item_formset.empty_form.washing }}
-                                                {{ item_formset.empty_form.ironing }}
-                                                {{ item_formset.empty_form.dry_clean }}
-                                                {{ item_formset.empty_form.stain_removal }}
+                                                <div class="form-check">
+                                                    {{ item_formset.empty_form.washing }}
+                                                    <label class="form-check-label">Wash & Dry</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    {{ item_formset.empty_form.ironing }}
+                                                    <label class="form-check-label">Ironing</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    {{ item_formset.empty_form.rewashing }}
+                                                    <label class="form-check-label">Rewashing (Free)</label>
+                                                </div>
                                             </td>
                                             <td class="text-center">
                                                 <button type="button" class="btn btn-danger btn-sm remove-item">
@@ -147,30 +160,44 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery (required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Select2 CSS/JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    const addButton = document.getElementById('add-item');
-    const totalForms = document.getElementById('id_items-TOTAL_FORMS');
-    const container = document.getElementById('items-container');
-    const emptyForm = document.getElementById('empty-form');
+        // Initialize Select2 on customer dropdown
+        $('#id_order-customer').select2({
+            placeholder: "Search by Name or Phone...",
+            allowClear: true,
+            width: '100%',
+            theme: "classic" // or 'bootstrap-5' if available, but default is fine
+        });
 
-    addButton.addEventListener('click', function () {
-        let formIndex = parseInt(totalForms.value);
+        const addButton = document.getElementById('add-item');
+        const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+        const container = document.getElementById('items-container');
+        const emptyForm = document.getElementById('empty-form');
 
-        let newRow = emptyForm.querySelector('tr').cloneNode(true);
-        newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formIndex);
+        addButton.addEventListener('click', function () {
+            let formIndex = parseInt(totalForms.value);
 
-        container.appendChild(newRow);
-        totalForms.value = formIndex + 1;
+            let newRow = emptyForm.querySelector('tr').cloneNode(true);
+            newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formIndex);
+
+            container.appendChild(newRow);
+            totalForms.value = formIndex + 1;
+        });
+
+        container.addEventListener('click', function (e) {
+            if (e.target.closest('.remove-item')) {
+                e.target.closest('tr').remove();
+            }
+        });
+
     });
-
-    container.addEventListener('click', function (e) {
-        if (e.target.closest('.remove-item')) {
-            e.target.closest('tr').remove();
-        }
-    });
-
-});
 </script>
 {% endblock %}

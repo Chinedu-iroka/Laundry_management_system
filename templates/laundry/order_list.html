@@ -10,13 +10,65 @@
     <div class="card mb-4 border-0 shadow-sm">
         <div class="card-body">
             <form method="GET" class="row g-2">
-                <div class="col-md-10">
-                    <input type="text" name="q" class="form-control"
-                        placeholder="Search by Order #, Customer Name, or Phone..." value="{{ request.GET.q }}">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Search Query</label>
+                    <input type="text" name="q" class="form-control" placeholder="Order #, Name, Phone..."
+                        value="{{ request.GET.q }}">
                 </div>
+
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100">Search</button>
+                    <label class="form-label small fw-bold text-muted">Order Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for code, label in order_status_choices %}
+                        <option value="{{ code }}" {% if request.GET.status == code %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Payment</label>
+                    <select name="payment" class="form-select">
+                        <option value="">All Payments</option>
+                        {% for code, label in payment_status_choices %}
+                        <option value="{{ code }}" {% if request.GET.payment == code %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Date</label>
+                    <input type="date" name="date" class="form-control" value="{{ request.GET.date }}">
+                </div>
+
+                {% if staff_list %}
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Staff</label>
+                    <select name="staff" class="form-select">
+                        <option value="">All Staff</option>
+                        {% for staff in staff_list %}
+                        <option value="{{ staff.id }}" {% if request.GET.staff|add:"0" == staff.id %}selected{% endif %}>
+                            {{ staff.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="col-md-{% if staff_list %}1{% else %}3{% endif %} d-flex align-items-end">
+                    <button type="submit" class="btn btn-dark w-100">Filter</button>
+                </div>
+
+                {% if request.GET.q or request.GET.status or request.GET.payment or request.GET.date or request.GET.staff %}
+                <div class="col-12 mt-2">
+                    <a href="{% url 'order_list' %}" class="text-danger small text-decoration-none"><i
+                            class="fas fa-times"></i> Clear All Filters</a>
+                </div>
+                {% endif %}
             </form>
         </div>
     </div>
@@ -51,14 +103,12 @@
                         {% endif %}
                         <td>₦{{ order.total_price }}</td>
                         <td>
-                            <span
-                                class="badge bg-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
+                            <span class="badge bg-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
                                 {{ order.get_status_display }}
                             </span>
                         </td>
                         <td>
-                            <span
-                                class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
+                            <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
                                 {{ order.get_payment_status_display }}
                             </span>
                         </td>

@@ -54,7 +54,12 @@
                 <tbody>
                     {% for item in items %}
                     <tr>
-                        <td>{{ item.clothing_type.name }}</td>
+                        <td>
+                            {{ item.clothing_type.name }}
+                            {% if item.rewashing %}
+                            <span class="badge bg-info text-dark ms-1">Rewashing (Free)</span>
+                            {% endif %}
+                        </td>
                         <td>{{ item.quantity }}</td>
                         <td>₦{{ item.price_per_item }}</td>
                         <td>₦{{ item.total_price }}</td>

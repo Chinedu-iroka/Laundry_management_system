@@ -46,7 +46,7 @@ class Customer(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.name} ({self.customer_id})"
+        return f"{self.name} - {self.phone} ({self.customer_id})"
 
     def save(self, *args, **kwargs):
         if not self.customer_id:
