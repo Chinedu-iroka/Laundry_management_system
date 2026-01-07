@@ -28,8 +28,12 @@
                     <hr>
                     <p><strong>Date:</strong> {{ order.order_date|date:"M d, Y" }}<br>
                         <strong>Processed By:</strong> {{ order.staff.get_full_name|default:order.staff.username }}<br>
-                        <strong>Urgent:</strong> {% if order.is_urgent %}<span class="text-danger">YES</span>{% else
-                        %}No{% endif %}
+                        <strong>Urgent:</strong>
+                        {% if order.is_urgent %}
+                        <span class="text-danger">YES</span>
+                        {% else %}
+                        No
+                        {% endif %}
                     </p>
                 </div>
             </div>
@@ -65,7 +69,7 @@
                         <td>₦{{ item.total_price }}</td>
                         <td>
                             <a href="{% url 'delete_order_item' item.id %}" class="btn btn-sm btn-danger"
-                                onclick="return confirm('Are you sure you want to remove this item?')">
+                                onclick="confirm('Are you sure you want to remove this item?')">
                                 Remove
                             </a>
                         </td>
