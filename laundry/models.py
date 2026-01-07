@@ -153,6 +153,9 @@ class LaundryOrder(models.Model):
 
         # 3. Final total
         self.total_price = self.subtotal + self.urgent_fee
+
+        # 4. Remaining balance
+        self.balance = self.total_price - self.amount_paid
     
 
     class Meta:

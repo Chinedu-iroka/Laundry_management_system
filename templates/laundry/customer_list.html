@@ -3,19 +3,32 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-users"></i> Customer List <span class="badge bg-secondary fs-6 align-middle">{{ customers.count }}</span></h2>
+        <h2>
+            <i class="fas fa-users"></i> Customer List
+            <span class="badge bg-secondary fs-6 align-middle">{{ customers.count }}</span>
+        </h2>
 
         <form method="get" class="d-flex gap-2">
-            <input type="text" name="q" class="form-control" placeholder="Search customers..." value="{{ request.GET.q }}">
+            <input type="text" name="q" class="form-control" placeholder="Search customers..."
+                value="{{ request.GET.q }}">
             <button type="submit" class="btn btn-outline-primary"><i class="fas fa-search"></i></button>
             {% if request.GET.q %}
-            <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary" title="Clear Search"><i class="fas fa-times"></i></a>
+            <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary" title="Clear Search">
+                <i class="fas fa-times"></i>
+            </a>
             {% endif %}
         </form>
 
-        <a href="{% url 'register_customer' %}" class="btn btn-primary">
-            <i class="fas fa-user-plus"></i> Register Customer
-        </a>
+        <div class="d-flex gap-2">
+            {% if user.user_type == 'admin' or user.is_superuser %}
+            <a href="{% url 'export_customers_csv' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success">
+                <i class="fas fa-download"></i> Download CSV
+            </a>
+            {% endif %}
+            <a href="{% url 'register_customer' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Register Customer
+            </a>
+        </div>
     </div>
 
     <div class="card border-0 shadow-sm">
@@ -26,6 +39,8 @@
                         <tr>
                             <th>Customer Name</th>
                             <th>Customer ID</th>
+                            <th>Phone Number</th>
+                            <th>Email Address</th>
                             <th>Date Registered</th>
                             <th>Registered By</th>
                             <th>Customer Rank</th>
@@ -37,10 +52,14 @@
                         <tr>
                             <td class="fw-bold">{{ customer.name }}</td>
                             <td><span class="badge bg-secondary">{{ customer.customer_id }}</span></td>
+                            <td>{{ customer.phone }}</td>
+                            <td>{{ customer.email|default:"N/A" }}</td>
                             <td>{{ customer.registration_date|date:"M d, Y" }}</td>
                             <td>
                                 {% if customer.registered_by %}
-                                <span class="badge bg-info text-dark"><i class="fas fa-user-tag"></i> {{ customer.registered_by.username }}</span>
+                                <span class="badge bg-info text-dark">
+                                    <i class="fas fa-user-tag"></i> {{ customer.registered_by.username }}
+                                </span>
                                 {% else %}
                                 <span class="text-muted">Unknown</span>
                                 {% endif %}
@@ -57,14 +76,15 @@
                             </td>
 
                             <td>
-                                <a href="{% url 'customer_detail' customer.id %}" class="btn btn-sm btn-outline-info" title="View Profile">
+                                <a href="{% url 'customer_detail' customer.id %}" class="btn btn-sm btn-outline-info"
+                                    title="View Profile">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-4">No customers found.</td>
+                            <td colspan="8" class="text-center py-4">No customers found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

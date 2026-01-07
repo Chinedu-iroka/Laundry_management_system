@@ -77,10 +77,25 @@
                     {% endfor %}
                 </tbody>
                 <tfoot>
+                    {% if order.payment_status == 'partial' %}
+                    <tr class="table-info font-monospace">
+                        <td colspan="3" class="text-end">Total Amount:</td>
+                        <td colspan="2">₦{{ order.total_price }}</td>
+                    </tr>
+                    <tr class="table-warning font-monospace">
+                        <td colspan="3" class="text-end text-success">Amount Paid:</td>
+                        <td colspan="2" class="text-success fw-bold">₦{{ order.amount_paid }}</td>
+                    </tr>
+                    <tr class="table-secondary fw-bold fs-5">
+                        <td colspan="3" class="text-end">Remaining Balance:</td>
+                        <td colspan="2" class="text-danger">₦{{ order.balance }}</td>
+                    </tr>
+                    {% else %}
                     <tr class="table-secondary fw-bold">
                         <td colspan="3" class="text-end">Grand Total:</td>
                         <td colspan="2">₦{{ order.total_price }}</td>
                     </tr>
+                    {% endif %}
                 </tfoot>
             </table>
         </div>

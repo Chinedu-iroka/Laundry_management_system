@@ -401,8 +401,8 @@ def register_customer(request):
     
     return render(request, 'laundry/register_customer.html', {'form': form})
 
-@login_required
-def customer_list(request):
+def _get_filtered_customers(request):
+    """Helper to apply filters to customers based on request parameters"""
     customers = Customer.objects.all().order_by('-registration_date')
     
     # Search functionality
@@ -414,6 +414,11 @@ def customer_list(request):
             Q(registered_by__username__icontains=query) |
             Q(registration_date__icontains=query)
         )
+    return customers
+
+@login_required
+def customer_list(request):
+    customers = _get_filtered_customers(request)
     
     # Calculate ranking base
     max_spent = customers.aggregate(max_val=Max('total_spent'))['max_val'] or 0
@@ -421,23 +426,39 @@ def customer_list(request):
     for customer in customers:
         # Calculate rank: 1-5 stars
         if max_spent > 0:
-            # Formula: (customer_spent / max_spent) * 5
-            # We use float() for division and round() for nearest integer
             rank = round((float(customer.total_spent) / float(max_spent)) * 5)
-            # Ensure at least 1 star if they have spent anything, else 0? 
-            # Requirement says "customer with highest order ranks 5 stars"
-            # Let's say: 0 spent = 0 stars (or 1). 
-            # If max_spent is high, low spenders get 0 or 1.
-            # Let's clamp to 1-5 for non-zero spenders? Or just pure ratio.
             customer.rank = int(rank) if rank > 0 else (1 if customer.total_spent > 0 else 0)
         else:
             customer.rank = 0
             
-        # Range for template loop (e.g. range(customer.rank))
         customer.star_range = range(customer.rank)
         customer.empty_star_range = range(5 - customer.rank)
         
     return render(request, 'laundry/customer_list.html', {'customers': customers})
+
+@login_required
+@user_passes_test(is_admin)
+def export_customers_csv(request):
+    """Export filtered customers to a CSV file"""
+    customers = _get_filtered_customers(request)
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="customer_list_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Name', 'Customer ID', 'Phone', 'Email', 'Total Spent', 'Date Registered'])
+    
+    for customer in customers:
+        writer.writerow([
+            customer.name,
+            customer.customer_id,
+            customer.phone,
+            customer.email or 'N/A',
+            customer.total_spent,
+            customer.registration_date.strftime("%Y-%m-%d")
+        ])
+        
+    return response
 
 @login_required
 def customer_detail(request, customer_id):

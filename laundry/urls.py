@@ -19,4 +19,5 @@ urlpatterns = [
     path('customers/register/', views.register_customer, name='register_customer'),
     path('customers/<int:customer_id>/', views.customer_detail, name='customer_detail'),
     path('customers/', views.customer_list, name='customer_list'),
+    path('customers/export/', views.export_customers_csv, name='export_customers_csv'),
 ]
