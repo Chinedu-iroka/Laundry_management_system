@@ -8,6 +8,7 @@ urlpatterns = [
     # Orders
     path('order/new/', views.create_order, name='create_order'),
     path('orders/', views.order_list, name='order_list'),
+    path('orders/export/', views.export_orders_csv, name='export_orders_csv'),
     path('order/<int:order_id>/', views.order_detail, name='order_detail'),
     path('order/<int:order_id>/edit/', views.create_order, name='order_update'), # Reusing view for edits
     

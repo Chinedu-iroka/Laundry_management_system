@@ -1,3 +1,5 @@
+import csv
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -136,9 +138,8 @@ def add_order_items(request, order_id):
         'clothing_items': clothing_items,
     })
 
-@login_required
-def order_list(request):
-    # Use select_related to join the User (staff) table with the Order table
+def _get_filtered_orders(request):
+    """Helper to apply filters to laundry orders based on request parameters"""
     if request.user.user_type == 'admin' or request.user.is_superuser:
         orders = LaundryOrder.objects.select_related('customer', 'staff').all().order_by('-order_date')
     else:
@@ -172,6 +173,12 @@ def order_list(request):
     staff_filter = request.GET.get('staff')
     if staff_filter and (request.user.is_superuser or request.user.user_type == 'admin'):
         orders = orders.filter(staff__id=staff_filter)
+        
+    return orders
+
+@login_required
+def order_list(request):
+    orders = _get_filtered_orders(request)
 
     # Context data for filter dropdowns
     User = get_user_model()
@@ -183,6 +190,31 @@ def order_list(request):
         'payment_status_choices': LaundryOrder.PAYMENT_STATUS,
         'staff_list': staff_list
     })
+
+@login_required
+@user_passes_test(is_admin)
+def export_orders_csv(request):
+    """Export filtered orders to a CSV file"""
+    orders = _get_filtered_orders(request)
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="order_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Order #', 'Customer', 'Staff', 'Amount', 'Status', 'Payment', 'Date'])
+    
+    for order in orders:
+        writer.writerow([
+            order.order_number,
+            order.customer.name,
+            order.staff.username,
+            order.total_price,
+            order.get_status_display(),
+            order.get_payment_status_display(),
+            order.order_date.strftime("%Y-%m-%d %H:%M")
+        ])
+        
+    return response
 
 @login_required
 def order_detail(request, order_id):

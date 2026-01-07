@@ -4,7 +4,14 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Order History</h2>
-        <a href="{% url 'create_order' %}" class="btn btn-primary">+ New Order</a>
+        <div>
+            {% if user.user_type == 'admin' or user.is_superuser %}
+            <a href="{% url 'export_orders_csv' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success me-2">
+                <i class="fas fa-download"></i> Download CSV
+            </a>
+            {% endif %}
+            <a href="{% url 'create_order' %}" class="btn btn-primary">+ New Order</a>
+        </div>
     </div>
 
     <div class="card mb-4 border-0 shadow-sm">
@@ -103,12 +110,14 @@
                         {% endif %}
                         <td>₦{{ order.total_price }}</td>
                         <td>
-                            <span class="badge bg-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
+                            <span
+                                class="badge bg-{% if order.status == 'collected' %}success{% elif order.status == 'ready' %}primary{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
                                 {{ order.get_status_display }}
                             </span>
                         </td>
                         <td>
-                            <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
+                            <span
+                                class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'pending' %}warning{% else %}secondary{% endif %}">
                                 {{ order.get_payment_status_display }}
                             </span>
                         </td>
