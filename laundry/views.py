@@ -63,9 +63,15 @@ def dashboard(request):
             payment_status='pending'
         ).count()
         
+        staff_revenue = LaundryOrder.objects.filter(
+            staff=request.user,
+            payment_status='paid'
+        ).aggregate(total=Sum('total_price'))['total'] or 0
+        
         context.update({
             'staff_orders': staff_orders,
             'staff_pending': staff_pending,
+            'staff_revenue': staff_revenue,
             'my_orders': LaundryOrder.objects.filter(staff=request.user)[:10],
         })
     

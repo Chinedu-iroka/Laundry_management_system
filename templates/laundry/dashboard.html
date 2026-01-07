@@ -76,15 +76,9 @@
     <div class="col-md-4 mb-3">
         <div class="card bg-success text-white">
             <div class="card-body">
-                <h5 class="card-title">Quick Actions</h5>
-                <div class="mt-2">
-                    <a href="{% url 'create_order' %}" class="btn btn-light btn-sm me-2">
-                        <i class="fas fa-plus"></i> New Order
-                    </a>
-                    <a href="{% url 'order_list' %}" class="btn btn-light btn-sm">
-                        <i class="fas fa-list"></i> View Orders
-                    </a>
-                </div>
+                <h5 class="card-title">Total Revenue</h5>
+                <h2>₦{{ staff_revenue|floatformat:2 }}</h2>
+                <p class="card-text">From paid orders you processed</p>
             </div>
         </div>
     </div>
